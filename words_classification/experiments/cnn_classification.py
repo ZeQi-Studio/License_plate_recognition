@@ -24,7 +24,7 @@ preprocessor_config = ImagePreprocessorConfig(
 data_loader_config = ImageSetDataLoaderConfig(
     pickle_dumped_file="dataset/character_data_augmentation/dataset_dict_dump.pickle",
     image_shape=INPUT_SHAPE_REVERSE,
-    shuffle_buffer_size=10000,
+    shuffle_buffer_size=100000,
     batch_size=10
 )
 
@@ -32,11 +32,16 @@ model_config = CNNModelConfig(input_shape=INPUT_SHAPE_REVERSE,
                               output_len=len(CHARACTER_LIST),
                               learning_rate=0.001)
 
-trainer_config = UniversalTrainerConfig(epoch=3)
+trainer_config = UniversalTrainerConfig(epoch=5)
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
+    logger.info("Preprocess...")
     # preprocessor = ImagePreprocessor(preprocessor_config)
+    logger.info("Making dataset...")
     data_loader = ImageSetDataLoader(data_loader_config)
     model = CNNModel(model_config)
     trainer = UniversalTrainer(model.get_model(), data_loader.get_dataset(), trainer_config)
+    logger.info("Training...")
     trainer.train()

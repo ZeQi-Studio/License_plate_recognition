@@ -2,3 +2,6 @@
 .idea/
 *.zip
 *.pickle
+
+*.pyc
+__pycache__/
