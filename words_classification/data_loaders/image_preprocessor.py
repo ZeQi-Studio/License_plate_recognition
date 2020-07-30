@@ -98,6 +98,7 @@ class ImagePreprocessor(PreprocessorTemplate):
                 save_path = os.path.join(self.config.OUT_FILE_ROOT, char, str(index) + ".png")
                 mkdir(save_path)
                 cv2.imencode(".png", image)[1].tofile(save_path)
+        self.cache_save(self.image_dict, os.path.join(self.config.OUT_FILE_ROOT, "dataset_dict_dump.pickle"))
 
 
 class ImagePreprocessorConfig(ConfigTemplate):
@@ -119,7 +120,7 @@ class ImagePreprocessorConfig(ConfigTemplate):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     my_conf = ImagePreprocessorConfig(
-        dataset_file_root="dataset/character_data/",
+        dataset_file_root="dataset/character_data_46x90/",
         character_list=[str(i) for i in range(10)] + list("QWERTYUPASDFGHJKLZXCVBNM") + [
             '冀', '新', '鄂', '宁', '桂', '黑', '湘', '皖', '云', '豫', '蒙', '赣', '吉', '辽', '苏', '甘', '晋', '浙', '闽',
             '渝', '贵', '陕', '粤', '川', '鲁', '琼', '青', '藏', '京', '津', '沪'],
