@@ -15,6 +15,9 @@ class ImagePreprocessor(PreprocessorTemplate):
         super(ImagePreprocessor, self).__init__(config)
         self.image_dict = {}
 
+        self.preprocess()
+        self.save_result()
+
     def preprocess(self):
         self.__load_init_set()
         self.__image_augmentation()
@@ -26,7 +29,7 @@ class ImagePreprocessor(PreprocessorTemplate):
             image_file = os.path.join(self.config.DATASET_FILE_ROOT, str(char) + ".png")
             logger.debug("Loading image from file: %s", image_file)
 
-            image = cv2.imdecode(np.fromfile(image_file, dtype=np.uint8), flags=0)
+            image = cv2.imdecode(np.fromfile(image_file, dtype=np.uint8), flags=cv2.IMREAD_COLOR)
 
             if image is None:
                 logger.warning("Try to read image %s failed! Skip.", image_file)
@@ -41,15 +44,19 @@ class ImagePreprocessor(PreprocessorTemplate):
             for _ in range(self.config.AUGMENTATION_AMOUNT):
                 image = org_image.copy()
 
+                # cv2.imshow("before", image)
+                # cv2.waitKey(1)
+
                 image = self.__rotate(image)
                 image = self.__random_crop(image, 5)
                 image = self.__brightness(image, random.random() + 0.5)
                 image = self.__random_noise(image)
 
-                image = cv2.resize(image, self.config.OUT_IMAGE_SIZE)
+                image = cv2.resize(image, self.config.OUT_IMAGE_SIZE[:2])
 
-                cv2.imshow("after aug", image)
-                cv2.waitKey(1)
+                # cv2.imshow("after aug", image)
+                # cv2.waitKey(1)
+
                 image_list.append(image)
             self.image_dict[char] = image_list
 
@@ -64,7 +71,7 @@ class ImagePreprocessor(PreprocessorTemplate):
 
     @staticmethod
     def __rotate(image):
-        rows, cols = image.shape
+        rows, cols, _ = image.shape
 
         M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-40, 40), 0.9)
 
@@ -85,9 +92,9 @@ class ImagePreprocessor(PreprocessorTemplate):
 
         shape = np.shape(image)
 
-        image = image[x1:shape[0] - x2, y1:shape[1] - y2]
+        image = image[x1:shape[0] - x2, y1:shape[1] - y2, ...]
         # logger.debug("%s%s", shape, image)
-        image = cv2.resize(image, shape)
+        image = cv2.resize(image, shape[:2])
 
         return image
 
@@ -125,11 +132,8 @@ if __name__ == '__main__':
             '冀', '新', '鄂', '宁', '桂', '黑', '湘', '皖', '云', '豫', '蒙', '赣', '吉', '辽', '苏', '甘', '晋', '浙', '闽',
             '渝', '贵', '陕', '粤', '川', '鲁', '琼', '青', '藏', '京', '津', '沪'],
         augmentation_amount=100,
-        out_image_size=(13 * 5, 25 * 5),
+        out_image_size=(13 * 5, 25 * 5, 3),
         out_file_root="dataset/character_data_augmentation/"
     )
 
     my_preprocessor = ImagePreprocessor(my_conf)
-
-    my_preprocessor.preprocess()
-    my_preprocessor.save_result()
