@@ -35,14 +35,22 @@ class ImagePreprocessor(PreprocessorTemplate):
     def __image_augmentation(self):
         self.config: ImagePreprocessorConfig
         random.seed(1000)
-        for char, image in self.image_dict.items():
+        for char, org_image in self.image_dict.items():
+            image_list = []
             for _ in range(self.config.AUGMENTATION_AMOUNT):
-                image = self.__brightness(image, random.random() * 0.4 + 0.8)
+                image = org_image.copy()
+
+                image = self.__rotate(image)
+                image = self.__random_crop(image, 5)
+                image = self.__brightness(image, random.random() + 0.5)
+                image = self.__random_noise(image)
 
                 image = cv2.resize(image, self.config.OUT_IMAGE_SIZE)
 
                 cv2.imshow("after aug", image)
-                cv2.waitKey(1)
+                cv2.waitKey(100)
+                image_list.append(image)
+            self.image_dict[char] = image_list
 
     @staticmethod
     def __brightness(image, weight: float):
@@ -52,6 +60,35 @@ class ImagePreprocessor(PreprocessorTemplate):
         dst = dst.clip(0, 255)
 
         return dst.astype(np.uint8)
+
+    @staticmethod
+    def __rotate(image):
+        rows, cols = image.shape
+
+        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-40, 40), 0.9)
+
+        dst = cv2.warpAffine(image, M, (cols, rows))
+        return dst
+
+    @staticmethod
+    def __random_noise(image):
+        noise = np.random.normal(size=np.shape(image))
+        return noise.astype(np.uint8) + image
+
+    @staticmethod
+    def __random_crop(image, border: int):
+        x1 = random.randint(0, border)
+        x2 = random.randint(0, border)
+        y1 = random.randint(0, border)
+        y2 = random.randint(0, border)
+
+        shape = np.shape(image)
+
+        image = image[x1:shape[0] - x2, y1:shape[1] - y2]
+        # logger.debug("%s%s", shape, image)
+        image = cv2.resize(image, shape)
+
+        return image
 
 
 class ImagePreprocessorConfig(ConfigTemplate):
