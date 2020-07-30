@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import random
 
+from tqdm import tqdm
+
 from templates import PreprocessorTemplate, ConfigTemplate
 from templates.utils import mkdir
 
@@ -39,8 +41,10 @@ class ImagePreprocessor(PreprocessorTemplate):
 
     def __image_augmentation(self):
         self.config: ImagePreprocessorConfig
-        random.seed(1000)
-        for char, org_image in self.image_dict.items():
+
+        logger.info("Generating augmentation data...")
+
+        for char, org_image in tqdm(self.image_dict.items(), ncols=100):
             image_list = []
             for _ in range(self.config.AUGMENTATION_AMOUNT):
                 image = org_image.copy()
@@ -49,14 +53,16 @@ class ImagePreprocessor(PreprocessorTemplate):
                 # cv2.waitKey(1)
 
                 image = self.__rotate(image)
-                image = self.__random_crop(image, 5)
+                image = self.__random_crop(image, 20)
                 image = self.__brightness(image, random.random() + 0.5)
                 image = self.__random_noise(image)
+                image = self.__gray_scale(image)
+                image = self.__contrast(image, random.random() * 0.8 + 0.9, random.randint(-50, 50))
 
                 image = cv2.resize(image, self.config.OUT_IMAGE_SIZE[:2])
 
                 # cv2.imshow("after aug", image)
-                # cv2.waitKey(1)
+                # cv2.waitKey(100)
 
                 image_list.append(image)
             self.image_dict[char] = image_list
@@ -74,7 +80,7 @@ class ImagePreprocessor(PreprocessorTemplate):
     def __rotate(image):
         rows, cols, _ = image.shape
 
-        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-40, 40), 0.9)
+        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-50, 50), 0.8)
 
         dst = cv2.warpAffine(image, M, (cols, rows))
         return dst
@@ -82,7 +88,9 @@ class ImagePreprocessor(PreprocessorTemplate):
     @staticmethod
     def __random_noise(image):
         noise = np.random.normal(size=np.shape(image))
-        return noise.astype(np.uint8) + image
+        with_noise = noise.astype(np.uint8) * 0.5 + image
+
+        return np.clip(with_noise, 0, 255).astype(np.uint8)
 
     @staticmethod
     def __random_crop(image, border: int):
@@ -99,9 +107,32 @@ class ImagePreprocessor(PreprocessorTemplate):
 
         return image
 
+    @staticmethod
+    def __gray_scale(image):
+        return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    @staticmethod
+    def __contrast(image, c, b):
+        """
+        给每个像素的每个通道增加亮度b
+        :param image:输入图片
+        :param c:
+        :param b:
+        :return:
+        """
+        shape = image.shape
+
+        # 新建全零(黑色)图片数组:np.zeros(img1.shape, dtype=uint8)
+        blank = np.zeros(shape, image.dtype)
+        dst = cv2.addWeighted(image, c, blank, 1 - c, b)
+
+        return dst
+
     def save_result(self):
         self.config: ImagePreprocessorConfig
-        for char, image_list in self.image_dict.items():
+        logger.info("Saving augmentation image to disk...")
+
+        for char, image_list in tqdm(self.image_dict.items(), ncols=100):
             for index, image in enumerate(image_list):
                 save_path = os.path.join(self.config.OUT_FILE_ROOT, char, str(index) + ".png")
                 mkdir(save_path)

@@ -8,25 +8,25 @@ class CNNModel(ModelTemplate):
         self.config: CNNModelConfig
         image_input = tf.keras.Input(shape=self.config.INPUT_SHAPE)
 
-        hidden_layer = tf.keras.layers.Dropout(rate=0.5)(image_input)
+        hidden_layer = tf.keras.layers.Dropout(rate=0.1)(image_input)
         hidden_layer = tf.keras.layers.Conv2D(filters=16,
-                                              kernel_size=(2, 2),
+                                              kernel_size=(4, 4),
                                               strides=(1, 1),
                                               padding="SAME",
                                               activation="relu")(hidden_layer)
         hidden_layer = tf.keras.layers.BatchNormalization()(hidden_layer)
         hidden_layer = tf.keras.layers.Conv2D(filters=32,
-                                              kernel_size=(2, 2),
-                                              strides=(1, 1),
+                                              kernel_size=(8, 8),
+                                              strides=(2, 2),
                                               padding="SAME",
                                               activation="relu")(hidden_layer)
         hidden_layer = tf.keras.layers.BatchNormalization()(hidden_layer)
-        hidden_layer = tf.keras.layers.Conv2D(filters=64,
-                                              kernel_size=(8, 8),
-                                              strides=(4, 4),
+        hidden_layer = tf.keras.layers.Conv2D(filters=128,
+                                              kernel_size=(4, 4),
+                                              strides=(2, 2),
                                               padding="SAME",
                                               activation="relu")(hidden_layer)
-        hidden_layer = tf.keras.layers.MaxPool2D(pool_size=(2, 2),
+        hidden_layer = tf.keras.layers.MaxPool2D(pool_size=(4, 4),
                                                  padding="SAME")(hidden_layer)
         hidden_layer = tf.keras.layers.BatchNormalization()(hidden_layer)
         hidden_layer = tf.keras.layers.Flatten()(hidden_layer)
@@ -40,10 +40,12 @@ class CNNModel(ModelTemplate):
 
         self.model = tf.keras.Model(inputs=image_input, outputs=output)
 
-        self.model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.config.LEARNING_RATE, clipnorm=0.5),
-                           loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                           metrics=[tf.keras.metrics.SparseCategoricalAccuracy(),
-                                    tf.keras.metrics.SparseCategoricalCrossentropy()])
+        self.model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.config.LEARNING_RATE, clipnorm=1),
+                           loss=tf.keras.losses.CategoricalCrossentropy(),
+                           metrics=[tf.keras.metrics.CategoricalAccuracy(),
+                                    tf.keras.metrics.CategoricalCrossentropy()])
+
+        self.show_summary()
 
 
 class CNNModelConfig(ConfigTemplate):
@@ -61,5 +63,3 @@ if __name__ == '__main__':
                                10,
                                0.001)
     my_model = CNNModel(my_config)
-
-    my_model.show_summary()
