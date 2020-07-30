@@ -1,0 +1,3 @@
+[submodule "words_classification/templates"]
+	path = words_classification/templates
+	url = https://github.com/AcherStyx/Deep-Leaning-Project-Template
