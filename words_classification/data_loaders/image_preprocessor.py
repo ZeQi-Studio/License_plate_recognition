@@ -5,6 +5,7 @@ import numpy as np
 import random
 
 from templates import PreprocessorTemplate, ConfigTemplate
+from templates.utils import mkdir
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class ImagePreprocessor(PreprocessorTemplate):
                 image = cv2.resize(image, self.config.OUT_IMAGE_SIZE)
 
                 cv2.imshow("after aug", image)
-                cv2.waitKey(100)
+                cv2.waitKey(1)
                 image_list.append(image)
             self.image_dict[char] = image_list
 
@@ -90,18 +91,28 @@ class ImagePreprocessor(PreprocessorTemplate):
 
         return image
 
+    def save_result(self):
+        self.config: ImagePreprocessorConfig
+        for char, image_list in self.image_dict.items():
+            for index, image in enumerate(image_list):
+                save_path = os.path.join(self.config.OUT_FILE_ROOT, char, str(index) + ".png")
+                mkdir(save_path)
+                cv2.imencode(".png", image)[1].tofile(save_path)
+
 
 class ImagePreprocessorConfig(ConfigTemplate):
     def __init__(self,
                  dataset_file_root,
                  character_list,
                  augmentation_amount,
-                 out_image_size
+                 out_image_size,
+                 out_file_root
                  ):
         self.DATASET_FILE_ROOT = dataset_file_root
         self.CHARACTER_LIST = character_list
         self.AUGMENTATION_AMOUNT = augmentation_amount
         self.OUT_IMAGE_SIZE = out_image_size
+        self.OUT_FILE_ROOT = out_file_root
 
 
 # only test case
@@ -113,9 +124,11 @@ if __name__ == '__main__':
             '冀', '新', '鄂', '宁', '桂', '黑', '湘', '皖', '云', '豫', '蒙', '赣', '吉', '辽', '苏', '甘', '晋', '浙', '闽',
             '渝', '贵', '陕', '粤', '川', '鲁', '琼', '青', '藏', '京', '津', '沪'],
         augmentation_amount=100,
-        out_image_size=(13 * 5, 25 * 5)
+        out_image_size=(13 * 5, 25 * 5),
+        out_file_root="dataset/character_data_augmentation/"
     )
 
     my_preprocessor = ImagePreprocessor(my_conf)
 
     my_preprocessor.preprocess()
+    my_preprocessor.save_result()
