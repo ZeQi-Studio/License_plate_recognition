@@ -18,7 +18,7 @@ class ImagePreprocessor(PreprocessorTemplate):
         self.image_dict = {}
 
         self.preprocess()
-        # self.save_result()
+        self.save_result()
         self.cache_save(self.image_dict, os.path.join(self.config.OUT_FILE_ROOT, "dataset_dict_dump.pickle"))
 
     def preprocess(self):

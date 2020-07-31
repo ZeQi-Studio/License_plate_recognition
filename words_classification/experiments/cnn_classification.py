@@ -11,12 +11,13 @@ from trainers.universal_trainer import UniversalTrainer, UniversalTrainerConfig
 
 logger = logging.getLogger(__name__)
 
-IS_TRAINING = True
+IS_TRAINING = False
 INPUT_SHAPE = (65, 125, 1)
 INPUT_SHAPE_REVERSE = (125, 65, 1)
 CHARACTER_LIST = [str(i) for i in range(10)] + list("QWERTYUPASDFGHJKLZXCVBNM") + [
     '冀', '新', '鄂', '宁', '桂', '黑', '湘', '皖', '云', '豫', '蒙', '赣', '吉', '辽', '苏', '甘', '晋', '浙', '闽',
     '渝', '贵', '陕', '粤', '川', '鲁', '琼', '青', '藏', '京', '津', '沪']
+VALIDATION_IMAGE_ROOT = "dataset/validation_image/"
 
 preprocessor_config = ImagePreprocessorConfig(
     dataset_file_root="dataset/character_data_46x90/",
@@ -58,8 +59,6 @@ if __name__ == '__main__':
         model = CNNModel(model_config)
         trainer = UniversalTrainer(model.get_model(), None, trainer_config)
         trainer.load("log/test.h5")
-
-        VALIDATION_IMAGE_ROOT = "dataset/validation_image/"
 
         valid_image_list = os.listdir(VALIDATION_IMAGE_ROOT)
         logger.debug("Validation image list: %s", valid_image_list)
