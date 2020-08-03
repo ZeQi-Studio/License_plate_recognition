@@ -3,7 +3,7 @@ import cv2
 import os
 from glob import glob
 
-# from leijd-chinese_license_plate_generator-master.chinese_license_plate_generator.plate_number import letters, digits
+# from chinese_license_plate_generator.chinese_license_plate_generator.plate_number import letters, digits
 
 from plate_number import random_select, generate_plate_number_white, generate_plate_number_yellow_xue
 from plate_number import generate_plate_number_black_gangao, generate_plate_number_black_shi, generate_plate_number_black_ling
