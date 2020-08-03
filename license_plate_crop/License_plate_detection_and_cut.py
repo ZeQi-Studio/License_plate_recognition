@@ -130,6 +130,18 @@ def cut2(img_cut):
     return img1, img2, img3, img4, img5, img6, img7
 
 
+def cut3(img_cut):
+    img_cut = cv.resize(img_cut, (440, 140))
+    img1 = img_cut[15:125, 10:66]
+    img2 = img_cut[15:125, 67:123]
+    img3 = img_cut[15:125, 146:202]
+    img4 = img_cut[15:125, 203:259]
+    img5 = img_cut[15:125, 260:316]
+    img6 = img_cut[15:125, 317:373]
+    img7 = img_cut[15:125, 374:430]
+    return img1, img2, img3, img4, img5, img6, img7
+
+
 def cut_test_save():
     bool = os.path.exists(save_path)
     if bool == False:
@@ -208,6 +220,7 @@ def detction_and_cut(path):
 
 
 def detection_and_cut_from_array(img):
+    temp = img
     w, h = len(img[0]), len(img)
     img = cv.resize(img, (w // 2, h // 2))
     img2 = img
@@ -216,13 +229,13 @@ def detection_and_cut_from_array(img):
         img_contours, img2, box, angle = contour(img_separate, img2)  # 轮廓检测，获取最外层矩形框的偏转角度
     except ValueError:
         print("未检测到车牌！")
-        return
-    img = cv.imdecode(np.fromfile(path, dtype=np.uint8), flags=0)
+        return None
+    img = cv.cvtColor(temp, cv.COLOR_BGR2GRAY)
     img = cv.resize(img, (w // 2, h // 2))
-    img = binary(img)
+    # img = binary(img)
     img_cut = cut1(img, box)
     img_cut_rotate = rotate(img_cut, angle)
-    img_cut1, img_cut2, img_cut3, img_cut4, img_cut5, img_cut6, img_cut7 = cut2(img_cut_rotate)
+    img_cut1, img_cut2, img_cut3, img_cut4, img_cut5, img_cut6, img_cut7 = cut3(img_cut_rotate)
     return [img_cut_rotate, img_cut1, img_cut2, img_cut3, img_cut4, img_cut5, img_cut6, img_cut7]
 
 

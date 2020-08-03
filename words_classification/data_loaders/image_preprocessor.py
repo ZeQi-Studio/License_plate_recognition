@@ -15,10 +15,12 @@ logger = logging.getLogger(__name__)
 class ImagePreprocessor(PreprocessorTemplate):
     def __init__(self, config):
         super(ImagePreprocessor, self).__init__(config)
+        self.config: ImagePreprocessorConfig
         self.image_dict = {}
 
         self.preprocess()
-        self.save_result()
+        if self.config.SAVE_IMAGE_FORMAT_RESULT:
+            self.save_result()
         self.cache_save(self.image_dict, os.path.join(self.config.OUT_FILE_ROOT, "dataset_dict_dump.pickle"))
 
     def preprocess(self):
@@ -52,12 +54,13 @@ class ImagePreprocessor(PreprocessorTemplate):
                 # cv2.imshow("before", image)
                 # cv2.waitKey(1)
 
+                image = self.__gray_scale(image)
+                image = self.__thresh_mean(image)
                 image = self.__rotate(image)
                 image = self.__random_crop(image, 20)
-                image = self.__brightness(image, random.random() + 0.5)
-                image = self.__random_noise(image)
-                image = self.__gray_scale(image)
-                image = self.__contrast(image, random.random() * 0.8 + 0.9, random.randint(-50, 50))
+                # image = self.__brightness(image, random.random() + 0.5)
+                # image = self.__random_noise(image)
+                # image = self.__contrast(image, random.random() * 0.8 + 0.9, random.randint(-50, 50))
 
                 image = cv2.resize(image, self.config.OUT_IMAGE_SIZE[:2])
 
@@ -78,9 +81,9 @@ class ImagePreprocessor(PreprocessorTemplate):
 
     @staticmethod
     def __rotate(image):
-        rows, cols, _ = image.shape
+        rows, cols = image.shape
 
-        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-50, 50), 0.8)
+        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-50, 50), random.random() * 0.2 + 0.6)
 
         dst = cv2.warpAffine(image, M, (cols, rows))
         return dst
@@ -88,7 +91,7 @@ class ImagePreprocessor(PreprocessorTemplate):
     @staticmethod
     def __random_noise(image):
         noise = np.random.normal(size=np.shape(image))
-        with_noise = noise.astype(np.uint8) * 0.5 + image
+        with_noise = noise.astype(np.uint8) * (random.random() - 0.5) + image
 
         return np.clip(with_noise, 0, 255).astype(np.uint8)
 
@@ -128,6 +131,10 @@ class ImagePreprocessor(PreprocessorTemplate):
 
         return dst
 
+    @staticmethod
+    def __thresh_mean(image):
+        return cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 51, 0)
+
     def save_result(self):
         self.config: ImagePreprocessorConfig
         logger.info("Saving augmentation image to disk...")
@@ -145,13 +152,15 @@ class ImagePreprocessorConfig(ConfigTemplate):
                  character_list,
                  augmentation_amount,
                  out_image_size,
-                 out_file_root
+                 out_file_root,
+                 save_image_format_result=False
                  ):
         self.DATASET_FILE_ROOT = dataset_file_root
         self.CHARACTER_LIST = character_list
         self.AUGMENTATION_AMOUNT = augmentation_amount
         self.OUT_IMAGE_SIZE = out_image_size
         self.OUT_FILE_ROOT = out_file_root
+        self.SAVE_IMAGE_FORMAT_RESULT = save_image_format_result
 
 
 # only test case
@@ -164,7 +173,8 @@ if __name__ == '__main__':
             '渝', '贵', '陕', '粤', '川', '鲁', '琼', '青', '藏', '京', '津', '沪'],
         augmentation_amount=100,
         out_image_size=(13 * 5, 25 * 5, 3),
-        out_file_root="dataset/character_data_augmentation/"
+        out_file_root="dataset/character_data_augmentation/",
+        save_image_format_result=True
     )
 
     my_preprocessor = ImagePreprocessor(my_conf)

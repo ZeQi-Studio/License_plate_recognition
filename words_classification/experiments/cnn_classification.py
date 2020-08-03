@@ -1,4 +1,6 @@
 import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'  # 只显示 Error
 import cv2
 import logging
 
@@ -12,6 +14,7 @@ from trainers.universal_trainer import UniversalTrainer, UniversalTrainerConfig
 logger = logging.getLogger(__name__)
 
 IS_TRAINING = False
+
 INPUT_SHAPE = (65, 125, 1)
 INPUT_SHAPE_REVERSE = (125, 65, 1)
 CHARACTER_LIST = [str(i) for i in range(10)] + list("QWERTYUPASDFGHJKLZXCVBNM") + [
@@ -22,21 +25,22 @@ VALIDATION_IMAGE_ROOT = "dataset/validation_image/"
 preprocessor_config = ImagePreprocessorConfig(
     dataset_file_root="dataset/character_data_46x90/",
     character_list=CHARACTER_LIST,
-    augmentation_amount=1000,
+    augmentation_amount=3000,
     out_image_size=INPUT_SHAPE,
-    out_file_root="dataset/character_data_augmentation/"
+    out_file_root="dataset/character_data_augmentation/",
+    save_image_format_result=False
 )
 
 data_loader_config = ImageSetDataLoaderConfig(
     pickle_dumped_file="dataset/character_data_augmentation/dataset_dict_dump.pickle",
     image_shape=INPUT_SHAPE_REVERSE,
     shuffle_buffer_size=100000,
-    batch_size=10
+    batch_size=100
 )
 
 model_config = CNNModelConfig(input_shape=INPUT_SHAPE_REVERSE,
                               output_len=len(CHARACTER_LIST),
-                              learning_rate=0.001)
+                              learning_rate=0.0001)
 
 trainer_config = UniversalTrainerConfig(epoch=5)
 
@@ -67,6 +71,7 @@ if __name__ == '__main__':
             image_file = os.path.join(VALIDATION_IMAGE_ROOT, image_file_name)
             image = cv2.imread(image_file, flags=cv2.IMREAD_COLOR)
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 51, 0)
             image = cv2.resize(image, INPUT_SHAPE[:2])
             image = np.array([image, ]) / 255
             image = np.reshape(image, np.shape(image) + (1,))
