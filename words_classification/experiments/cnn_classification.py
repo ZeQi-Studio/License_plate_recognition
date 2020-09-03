@@ -14,6 +14,7 @@ from trainers.universal_trainer import UniversalTrainer, UniversalTrainerConfig
 logger = logging.getLogger(__name__)
 
 IS_TRAINING = False
+DATA_AUGMENTATION = True and IS_TRAINING
 
 INPUT_SHAPE = (65, 125, 1)
 INPUT_SHAPE_REVERSE = (125, 65, 1)
@@ -25,24 +26,18 @@ VALIDATION_IMAGE_ROOT = "dataset/validation_image/"
 preprocessor_config = ImagePreprocessorConfig(
     dataset_file_root="dataset/character_data_46x90/",
     character_list=CHARACTER_LIST,
-    augmentation_amount=3000,
+    augmentation_amount=500,
     out_image_size=INPUT_SHAPE,
     out_file_root="dataset/character_data_augmentation/",
     save_image_format_result=False
 )
 
-data_loader_config = ImageSetDataLoaderConfig(
-    pickle_dumped_file="dataset/character_data_augmentation/dataset_dict_dump.pickle",
-    image_shape=INPUT_SHAPE_REVERSE,
-    shuffle_buffer_size=100000,
-    batch_size=100
-)
-
 model_config = CNNModelConfig(input_shape=INPUT_SHAPE_REVERSE,
                               output_len=len(CHARACTER_LIST),
-                              learning_rate=0.0001)
+                              learning_rate=0.001)
 
-trainer_config = UniversalTrainerConfig(epoch=5)
+trainer_config = UniversalTrainerConfig(epoch=5)\
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
@@ -51,6 +46,12 @@ if __name__ == '__main__':
         logger.info("Preprocess...")
         preprocessor = ImagePreprocessor(preprocessor_config)
         logger.info("Making dataset...")
+        data_loader_config = ImageSetDataLoaderConfig(
+            image_dict=preprocessor.get_image_dict(),
+            image_shape=INPUT_SHAPE_REVERSE,
+            shuffle_buffer_size=100000,
+            batch_size=100
+        )
         data_loader = ImageSetDataLoader(data_loader_config)
 
         model = CNNModel(model_config)
@@ -83,4 +84,4 @@ if __name__ == '__main__':
                         CHARACTER_LIST[predict_result], )
 
             cv2.imshow("Validation image", image[0])
-            cv2.waitKey(1000)
+            cv2.waitKey()

@@ -14,7 +14,7 @@ class ImageSetDataLoader(DataLoaderTemplate):
 
     def load(self, *args):
         self.config: ImageSetDataLoaderConfig
-        self.image_dict = self.cache_load(self.config.PICKLE_DUMPED_FILE)
+        self.image_dict = self.config.IMAGE_DICT
         self.label_dict = {k: index for index, (k, v) in enumerate(self.image_dict.items())}
 
         logger.info("Label dict: %s", self.label_dict)
@@ -24,6 +24,7 @@ class ImageSetDataLoader(DataLoaderTemplate):
             output_types=(tf.float32, tf.float32),
             output_shapes=(self.config.IMAGE_SHAPE, (len(self.label_dict.items())))
         ).shuffle(self.config.SHUFFLE_BUFFER_SIZE).batch(self.config.BATCH_SIZE)
+        self.dataset.prefetch(10)
 
     def __data_generator(self):
         for char, image_list in self.image_dict.items():
@@ -34,12 +35,12 @@ class ImageSetDataLoader(DataLoaderTemplate):
 
 class ImageSetDataLoaderConfig(ConfigTemplate):
     def __init__(self,
-                 pickle_dumped_file,
+                 image_dict,
                  image_shape,
                  batch_size,
                  shuffle_buffer_size
                  ):
-        self.PICKLE_DUMPED_FILE = pickle_dumped_file
+        self.IMAGE_DICT = image_dict
         self.IMAGE_SHAPE = image_shape
         self.BATCH_SIZE = batch_size
         self.SHUFFLE_BUFFER_SIZE = shuffle_buffer_size

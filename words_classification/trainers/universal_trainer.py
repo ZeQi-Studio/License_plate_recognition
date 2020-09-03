@@ -12,7 +12,9 @@ class UniversalTrainer(TrainerTemplate):
         self.data: tf.data.Dataset
         self.config: UniversalTrainerConfig
 
-        tf_board_callbacks = tf.keras.callbacks.TensorBoard(log_dir="log/" + self.timestamp, histogram_freq=100)
+        tf_board_callbacks = tf.keras.callbacks.TensorBoard(log_dir="log/" + self.timestamp,
+                                                            histogram_freq=100,
+                                                            update_freq='epoch')
 
         self.model.fit(x=self.data,
                        epochs=self.config.EPOCH,

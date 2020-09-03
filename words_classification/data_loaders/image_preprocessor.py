@@ -21,7 +21,7 @@ class ImagePreprocessor(PreprocessorTemplate):
         self.preprocess()
         if self.config.SAVE_IMAGE_FORMAT_RESULT:
             self.save_result()
-        self.cache_save(self.image_dict, os.path.join(self.config.OUT_FILE_ROOT, "dataset_dict_dump.pickle"))
+            self.cache_save(self.image_dict, os.path.join(self.config.OUT_FILE_ROOT, "dataset_dict_dump.pickle"))
 
     def preprocess(self):
         self.__load_init_set()
@@ -55,13 +55,15 @@ class ImagePreprocessor(PreprocessorTemplate):
                 # cv2.waitKey(1)
 
                 image = self.__gray_scale(image)
-                image = self.__thresh_mean(image)
-                image = self.__rotate(image)
-                image = self.__random_crop(image, 20)
-                # image = self.__brightness(image, random.random() + 0.5)
-                # image = self.__random_noise(image)
+                # image = self.__thresh_mean(image)
+                image = cv2.GaussianBlur(image, (5, 5), random.random() * 50)
+                image = self.__random_line(image)
+                image = self.__rotate(image, 30)
+                image = self.__random_line(image)
+                image = self.__random_crop(image, 15)
+                # image = self.__random_noise(image, random.randint(0, 20))
                 # image = self.__contrast(image, random.random() * 0.8 + 0.9, random.randint(-50, 50))
-
+                image = self.__thresh_half(image)
                 image = cv2.resize(image, self.config.OUT_IMAGE_SIZE[:2])
 
                 # cv2.imshow("after aug", image)
@@ -80,18 +82,18 @@ class ImagePreprocessor(PreprocessorTemplate):
         return dst.astype(np.uint8)
 
     @staticmethod
-    def __rotate(image):
+    def __rotate(image, angle):
         rows, cols = image.shape
 
-        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-50, 50), random.random() * 0.2 + 0.6)
+        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), random.randint(-angle, angle), random.random() * 0.3 + 0.4)
 
         dst = cv2.warpAffine(image, M, (cols, rows))
         return dst
 
     @staticmethod
-    def __random_noise(image):
+    def __random_noise(image, strength):
         noise = np.random.normal(size=np.shape(image))
-        with_noise = noise.astype(np.uint8) * (random.random() - 0.5) + image
+        with_noise = noise.astype(np.uint8) * (random.randint(-strength, strength)) + image
 
         return np.clip(with_noise, 0, 255).astype(np.uint8)
 
@@ -135,6 +137,37 @@ class ImagePreprocessor(PreprocessorTemplate):
     def __thresh_mean(image):
         return cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 51, 0)
 
+    @staticmethod
+    def __thresh_half(image):
+        thresh, ret = cv2.threshold(image, random.randint(100, 200), 255, cv2.THRESH_BINARY)
+        return ret
+
+    @staticmethod
+    def __random_line(image):
+        shape = np.shape(image)
+        for i in range(5):
+            x = random.randint(0, shape[0] - 2)
+            y = random.randint(0, shape[1] - 2)
+            image[x:x + random.randint(0, 2), y:y + random.randint(0, int(shape[1] / 2)), ...] = 255
+
+        for i in range(2):
+            x = random.randint(0, shape[0] - 2)
+            y = random.randint(0, shape[1] - 2)
+            image[x:x + random.randint(0, 3), y:y + random.randint(0, int(shape[1])), ...] = 255
+
+        for i in range(2):
+            x = random.randint(0, shape[0] / 2)
+            y = random.randint(0, shape[1] / 2)
+            image[x:x + random.randint(0, 3), 0:y + random.randint(30, int(shape[1])), ...] = 255
+
+        for i in range(2):
+            x = random.randint(0, shape[0] / 2)
+            y = random.randint(0, shape[1] / 2)
+            image[int(shape[0] / 2) + x:int(shape[0] / 2) + x + random.randint(1, 3),
+            0:y + random.randint(30, int(shape[1])), ...] = 255
+
+        return image
+
     def save_result(self):
         self.config: ImagePreprocessorConfig
         logger.info("Saving augmentation image to disk...")
@@ -144,6 +177,9 @@ class ImagePreprocessor(PreprocessorTemplate):
                 save_path = os.path.join(self.config.OUT_FILE_ROOT, char, str(index) + ".png")
                 mkdir(save_path)
                 cv2.imencode(".png", image)[1].tofile(save_path)
+
+    def get_image_dict(self):
+        return self.image_dict
 
 
 class ImagePreprocessorConfig(ConfigTemplate):
